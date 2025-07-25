@@ -7,6 +7,7 @@ import csv
 
 CSV_PATH = Path(__file__).with_name("frames.csv")
 
+
 genspath = Path(__file__).with_name("generations.csv")
 def load_single_value(path: Path) -> int:
     text = path.read_text(encoding="utf-8").strip()
@@ -141,10 +142,75 @@ class SNAKE:
         self.body = [Vector2(10, 10), Vector2(11, 10), Vector2(12, 10)]
         self.direction = Vector2(-1, 0)
         self.new_block = False
+
+        # --- heads -------------------------------------------------
+        self.head_up = pygame.image.load("Graphics/head_up.png").convert_alpha()
+        self.head_down = pygame.image.load("Graphics/head_down.png").convert_alpha()
+        self.head_left = pygame.image.load("Graphics/head_left.png").convert_alpha()
+        self.head_right = pygame.image.load("Graphics/head_right.png").convert_alpha()
+
+        # --- tails -------------------------------------------------
+        self.tail_up = pygame.image.load("Graphics/tail_up.png").convert_alpha()
+        self.tail_down = pygame.image.load("Graphics/tail_down.png").convert_alpha()
+        self.tail_left = pygame.image.load("Graphics/tail_left.png").convert_alpha()
+        self.tail_right = pygame.image.load("Graphics/tail_right.png").convert_alpha()
+
+        # --- body segments ----------------------------------------
+        self.body_vertical = pygame.image.load("Graphics/body_vertical.png").convert_alpha()
+        self.body_horizontal = pygame.image.load("Graphics/body_horizontal.png").convert_alpha()
+        self.body_tl = pygame.image.load("Graphics/body_tl.png").convert_alpha()
+        self.body_tr = pygame.image.load("Graphics/body_tr.png").convert_alpha()
+        self.body_bl = pygame.image.load("Graphics/body_bl.png").convert_alpha()
+        self.body_br = pygame.image.load("Graphics/body_br.png").convert_alpha()
+
     def draw_snake(self):
-        for block in self.body:
-            snake_rect = pygame.Rect(int(block.x * cell_size), int(block.y * cell_size), cell_size, cell_size)
-            pygame.draw.rect(screen, (45, 64, 215), snake_rect)
+        for i, block in enumerate(self.body):
+            if i == 0:
+                snake_rect = pygame.Rect(int(block.x * cell_size), int(block.y * cell_size), cell_size, cell_size)
+                #pygame.draw.rect(screen, (45, 64, 215), snake_rect)
+                if block.y < self.body[i+1].y:
+                    screen.blit(self.head_up, snake_rect)
+                elif block.y > self.body[i+1].y:
+                    screen.blit(self.head_down, snake_rect)
+                elif block.x < self.body[i + 1].x:
+                    screen.blit(self.head_left, snake_rect)
+                elif block.x > self.body[i + 1].x:
+                    screen.blit(self.head_right, snake_rect)
+            elif i == len(self.body)-1:
+                snake_rect = pygame.Rect(int(block.x * cell_size), int(block.y * cell_size), cell_size, cell_size)
+                if block.y < self.body[i-1].y:
+                    screen.blit(self.tail_up, snake_rect)
+                elif block.y > self.body[i-1].y:
+                    screen.blit(self.tail_down, snake_rect)
+                elif block.x < self.body[i - 1].x:
+                    screen.blit(self.tail_left, snake_rect)
+                elif block.x > self.body[i - 1].x:
+                    screen.blit(self.tail_right, snake_rect)
+            else:
+                snake_rect = pygame.Rect(int(block.x * cell_size), int(block.y * cell_size), cell_size, cell_size)
+                xd = self.body[i-1].x-self.body[i+1].x
+                xf = self.body[i-1].x - block.x
+                xb = self.body[i+1].x - block.x
+                yd = self.body[i-1].y-self.body[i+1].y
+                yf = self.body[i-1].y - block.y
+                yb = self.body[i+1].y - block.y
+
+                if xd == 0:
+                    screen.blit(self.body_vertical, snake_rect)
+                if yd == 0:
+                    screen.blit(self.body_horizontal, snake_rect)
+                if (xf > 0 and yb > 0) or (xb > 0 and yf > 0):
+                    screen.blit(self.body_br, snake_rect)
+                if (xf < 0 and yb > 0) or (xb < 0 and yf > 0):
+                    screen.blit(self.body_bl, snake_rect)
+                if (xf < 0 and yb < 0) or (xb < 0 and yf < 0):
+                    screen.blit(self.body_tl, snake_rect)
+                if (xf > 0 and yb < 0) or (xb > 0 and yf < 0):
+                    screen.blit(self.body_tr, snake_rect)
+
+
+
+
     def move_snake(self):
         #if not self.new_block:
         body_copy = self.body[:-1]
@@ -188,9 +254,11 @@ class FRUIT:
         self.y = random.randint(0, cell_number-1)
         self.pos = Vector2(self.x, self.y)
 
+
     def draw_fruit(self):
         fruit_rect = pygame.Rect(int(self.pos.x*cell_size), int(self.pos.y*cell_size),cell_size, cell_size)
-        pygame.draw.rect(screen, (215, 116, 114), fruit_rect)
+        #pygame.draw.rect(screen, (215, 48, 68), fruit_rect)
+        screen.blit(apple, fruit_rect)
 
     def randomize(self):
         self.pos.x = random.randint(0, cell_number-1)
@@ -211,9 +279,19 @@ class MAIN:
         self.check_collision()
         self.check_fail(gen, X)
 
+
     def draw(self):
+        self.draw_grass()
         self.fruit.draw_fruit()
         self.snake.draw_snake()
+
+    def draw_grass(self):
+        grass_color = (150, 200, 40)
+        for col in range(cell_number):
+            for row in range(cell_number):
+                if (col+row)%2 == 0:
+                    grass_rect = pygame.Rect(col*cell_size,row*cell_size,cell_size, cell_size)
+                    pygame.draw.rect(screen, grass_color, grass_rect)
     def check_collision(self):
         if self.fruit.pos == self.snake.body[0]:
             self.fruit.randomize()
@@ -258,6 +336,10 @@ main_game = MAIN()
 gen = Generator(gen_size_const)
 X = ArrayD1(input_size)
 X[3] = 1
+apple = pygame.image.load("Graphics/apple.png").convert_alpha()
+
+
+
 while True:
     frames += 1
     for event in pygame.event.get():
@@ -281,6 +363,6 @@ while True:
     screen.fill((175, 215, 70))
     main_game.draw()
     pygame.display.update()
-    clock.tick(60)
+    clock.tick(5)
 
     #1000000
